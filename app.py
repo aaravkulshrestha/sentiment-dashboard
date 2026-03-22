@@ -5,50 +5,89 @@ import matplotlib.pyplot as plt
 from collections import Counter
 import re
 
-# Load model
-sentiment_model = pipeline(
-    "sentiment-analysis",
-    model="cardiffnlp/twitter-roberta-base-sentiment"
-)
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(page_title="AI Sentiment Dashboard", layout="wide")
 
-# Session state
+# ---------------- CUSTOM UI ----------------
+st.markdown("""
+<style>
+body {
+    background-color: #0e1117;
+}
+h1, h2, h3 {
+    color: #00ffcc;
+}
+.stButton>button {
+    background-color: #00ffcc;
+    color: black;
+    border-radius: 10px;
+    height: 3em;
+    width: 100%;
+}
+textarea {
+    border-radius: 10px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------- LOAD MODEL ----------------
+@st.cache_resource
+def load_model():
+    return pipeline(
+        "sentiment-analysis",
+        model="cardiffnlp/twitter-roberta-base-sentiment"
+    )
+
+sentiment_model = load_model()
+
+# ---------------- SESSION STATE ----------------
 if 'history' not in st.session_state:
     st.session_state.history = []
 
-st.title("🚀AI Sentiment Analytics Dashboard")
+# ---------------- TITLE ----------------
+st.title("🚀 AI Sentiment Analytics Dashboard")
+st.markdown("### 🧠 Real-Time AI Sentiment Intelligence")
 
 # ---------------- INPUT SECTION ----------------
 st.header("✍️ Analyze Single Review")
 
-user_input = st.text_area("Enter your review:")
+col1, col2 = st.columns([2, 1])
 
-if st.button("Analyze Review"):
-    if user_input.strip():
-        result = sentiment_model(user_input, truncation=True)[0]
-        label = result['label']
-        score = result['score']
+with col1:
+    user_input = st.text_area("Enter your review:")
 
-        # Convert labels
-        if label == "LABEL_0":
-            sentiment = "NEGATIVE"
-        elif label == "LABEL_1":
-            sentiment = "NEUTRAL"
-        else:
-            sentiment = "POSITIVE"
+with col2:
+    analyze_btn = st.button("Analyze Review")
 
-        st.session_state.history.append({
-            "text": user_input,
-            "sentiment": sentiment,
-            "confidence": score
-        })
+if analyze_btn and user_input.strip():
+    result = sentiment_model(user_input, truncation=True)[0]
+    label = result['label']
+    score = result['score']
 
-        # Show result
-        if sentiment == "POSITIVE":
-            st.success(f"{sentiment} ({score:.2f})")
-        elif sentiment == "NEGATIVE":
-            st.error(f"{sentiment} ({score:.2f})")
-        else:
-            st.warning(f"{sentiment} ({score:.2f})")
+    # Convert labels
+    if label == "LABEL_0":
+        sentiment = "NEGATIVE"
+    elif label == "LABEL_1":
+        sentiment = "NEUTRAL"
+    else:
+        sentiment = "POSITIVE"
+
+    st.session_state.history.append({
+        "text": user_input,
+        "sentiment": sentiment,
+        "confidence": score
+    })
+
+    # Output styling
+    if sentiment == "POSITIVE":
+        st.success(f"{sentiment}")
+    elif sentiment == "NEGATIVE":
+        st.error(f"{sentiment}")
+    else:
+        st.warning(f"{sentiment}")
+
+    st.progress(float(score))
+    st.write(f"Confidence Score: {score:.2f}")
 
 # ---------------- FILE UPLOAD ----------------
 st.header("📂 Upload Dataset")
@@ -57,16 +96,15 @@ uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
-
     text_col = st.selectbox("Select Text Column", df.columns)
 
     if st.button("Analyze Dataset"):
         results = []
 
-        for text in df[text_col].dropna().head(100):  # limit for speed
+        for text in df[text_col].dropna().head(100):
             result = sentiment_model(str(text), truncation=True)[0]
-
             label = result['label']
+
             if label == "LABEL_0":
                 sentiment = "NEGATIVE"
             elif label == "LABEL_1":
@@ -89,7 +127,6 @@ st.header("📊 Analytics Dashboard")
 
 if st.session_state.history:
     df_hist = pd.DataFrame(st.session_state.history)
-
     counts = df_hist['sentiment'].value_counts()
 
     # Metrics
@@ -98,25 +135,28 @@ if st.session_state.history:
     col2.metric("Negative", counts.get("NEGATIVE", 0))
     col3.metric("Neutral", counts.get("NEUTRAL", 0))
 
-    # Bar Chart
-    st.subheader("Bar Chart")
-    fig, ax = plt.subplots()
-    ax.bar(counts.index, counts.values)
-    st.pyplot(fig)
+    # Charts side by side
+    col1, col2 = st.columns(2)
 
-    # Pie Chart
-    st.subheader("Pie Chart")
-    fig2, ax2 = plt.subplots()
-    ax2.pie(counts.values, labels=counts.index, autopct='%1.1f%%')
-    st.pyplot(fig2)
+    with col1:
+        st.subheader("📊 Bar Chart")
+        fig, ax = plt.subplots()
+        ax.bar(counts.index, counts.values)
+        st.pyplot(fig)
 
-    # Trend over time
+    with col2:
+        st.subheader("🥧 Pie Chart")
+        fig2, ax2 = plt.subplots()
+        ax2.pie(counts.values, labels=counts.index, autopct='%1.1f%%')
+        st.pyplot(fig2)
+
+    # Trend
     st.subheader("📈 Trend Over Time")
     df_hist['index'] = range(len(df_hist))
     trend = df_hist.groupby(['index', 'sentiment']).size().unstack().fillna(0)
     st.line_chart(trend)
 
-    # ---------------- KEYWORD EXTRACTION ----------------
+    # ---------------- KEYWORDS ----------------
     st.subheader("🔍 Common Keywords (Negative Reviews)")
 
     negative_text = " ".join(
@@ -130,11 +170,15 @@ if st.session_state.history:
         words_df = pd.DataFrame(common_words, columns=["Word", "Count"])
         st.dataframe(words_df)
 
-    # History table
+    # History
     st.subheader("🧾 Full History")
     st.dataframe(df_hist)
 
-# Clear
+# ---------------- RESET ----------------
 if st.button("🗑️ Reset All Data"):
     st.session_state.history = []
     st.rerun()
+
+# ---------------- FOOTER ----------------
+st.markdown("---")
+st.markdown("Made with ❤️ by Aarav Kulshrestha | AI Capstone Project")
