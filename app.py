@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 from transformers import pipeline
 import matplotlib.pyplot as plt
-from collections import Counter
-import re
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AI Dashboard", layout="wide")
@@ -11,43 +9,88 @@ st.set_page_config(page_title="AI Dashboard", layout="wide")
 # ---------------- STYLES ----------------
 st.markdown("""
 <style>
-body {
-    background: linear-gradient(135deg, #0e1117, #1a1f2b);
+
+/* GLOBAL */
+html, body, [class*="css"] {
+    background-color: #0a0a0a;
+    color: white;
+    font-family: 'Inter', sans-serif;
 }
+
+/* TITLE */
+.main-title {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+
+/* SUBTEXT */
+.sub-text {
+    color: #aaa;
+    font-size: 18px;
+}
+
+/* CARD */
 .card {
-    padding: 20px;
-    border-radius: 15px;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px);
-    margin-bottom: 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 25px;
+    border-radius: 16px;
+    transition: 0.3s;
 }
-.big-title {
-    font-size: 50px;
-    font-weight: bold;
-    background: linear-gradient(90deg,#00ffcc,#7f5af0);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+
+.card:hover {
+    transform: translateY(-5px);
+    border: 1px solid rgba(255,255,255,0.2);
 }
+
+/* BUTTON */
+.stButton>button {
+    background: white;
+    color: black;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+}
+
+.stButton>button:hover {
+    background: #ddd;
+}
+
+/* SIDEBAR */
+section[data-testid="stSidebar"] {
+    background-color: #050505;
+    border-right: 1px solid #111;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- WELCOME ----------------
+# ---------------- SESSION ----------------
 if "started" not in st.session_state:
     st.session_state.started = False
 
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+# ---------------- WELCOME SCREEN ----------------
 if not st.session_state.started:
-    st.markdown('<div class="big-title">AI Sentiment Intelligence</div>', unsafe_allow_html=True)
-    st.write("### Analyze emotions. Visualize insights. Instantly.")
 
-    st.balloons()
+    st.markdown('<div class="main-title">AI Sentiment Intelligence</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-text">Understand emotions. Analyze data. Make decisions.</div>', unsafe_allow_html=True)
 
-    if st.button("🚀 Get Started"):
-        st.session_state.started = True
-        st.rerun()
+    st.write("")
+
+    col1, col2, col3 = st.columns([1,2,1])
+
+    with col2:
+        if st.button("Get Started"):
+            st.session_state.started = True
+            st.rerun()
 
     st.stop()
 
-# ---------------- MODEL ----------------
+# ---------------- LOAD MODEL ----------------
 @st.cache_resource
 def load_model():
     return pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment")
@@ -55,15 +98,13 @@ def load_model():
 model = load_model()
 
 # ---------------- SIDEBAR ----------------
-st.sidebar.title("⚡ AI System")
-menu = st.sidebar.radio("Menu", ["Dashboard", "Analyze", "Dataset"])
-
-if "history" not in st.session_state:
-    st.session_state.history = []
+st.sidebar.title("⚡ AI Panel")
+menu = st.sidebar.radio("", ["Dashboard", "Analyze", "Dataset"])
 
 # ---------------- ANALYZE ----------------
 if menu == "Analyze":
-    st.title("✍️ Analyze Text")
+
+    st.markdown('<div class="main-title">Analyze Text</div>', unsafe_allow_html=True)
 
     text = st.text_area("Enter text")
 
@@ -84,15 +125,16 @@ if menu == "Analyze":
 
 # ---------------- DATASET ----------------
 elif menu == "Dataset":
-    st.title("📂 Upload Dataset")
 
-    file = st.file_uploader("CSV")
+    st.markdown('<div class="main-title">Dataset Analysis</div>', unsafe_allow_html=True)
+
+    file = st.file_uploader("Upload CSV")
 
     if file:
         df = pd.read_csv(file)
-        col = st.selectbox("Text column", df.columns)
+        col = st.selectbox("Select column", df.columns)
 
-        if st.button("Run Analysis"):
+        if st.button("Analyze Dataset"):
             results = []
             for t in df[col].dropna().head(50):
                 r = model(str(t))[0]
@@ -103,7 +145,8 @@ elif menu == "Dataset":
 
 # ---------------- DASHBOARD ----------------
 elif menu == "Dashboard":
-    st.title("📊 Dashboard")
+
+    st.markdown('<div class="main-title">Dashboard</div>', unsafe_allow_html=True)
 
     if st.session_state.history:
 
@@ -114,13 +157,13 @@ elif menu == "Dashboard":
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            st.markdown('<div class="card">Positive<br><h2>{}</h2></div>'.format(counts.get("POSITIVE",0)), unsafe_allow_html=True)
+            st.markdown(f'<div class="card">Positive<br><h2>{counts.get("POSITIVE",0)}</h2></div>', unsafe_allow_html=True)
 
         with c2:
-            st.markdown('<div class="card">Negative<br><h2>{}</h2></div>'.format(counts.get("NEGATIVE",0)), unsafe_allow_html=True)
+            st.markdown(f'<div class="card">Negative<br><h2>{counts.get("NEGATIVE",0)}</h2></div>', unsafe_allow_html=True)
 
         with c3:
-            st.markdown('<div class="card">Neutral<br><h2>{}</h2></div>'.format(counts.get("NEUTRAL",0)), unsafe_allow_html=True)
+            st.markdown(f'<div class="card">Neutral<br><h2>{counts.get("NEUTRAL",0)}</h2></div>', unsafe_allow_html=True)
 
         # CHARTS
         col1, col2 = st.columns(2)
