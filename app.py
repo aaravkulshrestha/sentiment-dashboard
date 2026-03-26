@@ -276,6 +276,41 @@ with st.sidebar:
 
 menu = st.session_state.page
 
+# ── Mobile-friendly sidebar toggle button ──
+st.markdown("""
+<style>
+.mobile-menu-btn {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 9999;
+    background: rgba(0,255,200,0.1);
+    border: 1px solid rgba(0,255,200,0.35);
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #00ffcc;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s;
+    line-height: 1;
+}
+.mobile-menu-btn:hover {
+    background: rgba(0,255,200,0.2);
+    box-shadow: 0 0 16px rgba(0,255,200,0.2);
+}
+</style>
+<button class='mobile-menu-btn' onclick="
+    var sidebar = window.parent.document.querySelector('[data-testid=stSidebar]');
+    var collapsed = window.parent.document.querySelector('[data-testid=collapsedControl]');
+    if (collapsed) collapsed.click();
+    else {
+        var btn = window.parent.document.querySelector('[data-testid=stSidebarCollapseButton]');
+        if(btn) btn.click();
+    }
+">☰</button>
+""", unsafe_allow_html=True)
+
 
 # ─────────────────────────────────────────────
 #  PAGE: ANALYZE
