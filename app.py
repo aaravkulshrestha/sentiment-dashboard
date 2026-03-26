@@ -44,6 +44,11 @@ html, body, [class*="css"] {
 #MainMenu, footer, header { visibility: hidden; }
 h1, h2, h3 { font-family: 'Orbitron', monospace !important; }
 
+/* Hide the sidebar collapse/expand toggle arrow button */
+[data-testid="collapsedControl"] { display: none !important; }
+button[kind="header"] { display: none !important; }
+.st-emotion-cache-1cypcdb { display: none !important; }
+
 .stat-card {
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.07);
@@ -220,7 +225,6 @@ if not st.session_state.started:
         if st.button("⚡  INITIALIZE SYSTEM", use_container_width=True):
             st.session_state.started = True
             st.session_state.page   = "Analyze"
-            st.session_state.open_sidebar = True
             st.rerun()
     st.stop()
 
@@ -230,18 +234,6 @@ if not st.session_state.started:
 #  st.radio to eliminate keyboard-stuck bug
 # ─────────────────────────────────────────────
 has_data = len(st.session_state.history) > 0
-
-# Auto-open sidebar once after welcome screen
-if st.session_state.get("open_sidebar"):
-    st.session_state.open_sidebar = False
-    st.components.v1.html("""
-    <script>
-        setTimeout(function() {
-            var btn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
-            if (btn) btn.click();
-        }, 300);
-    </script>
-    """, height=0)
 
 with st.sidebar:
     st.markdown('<div class="sidebar-logo">SentimentIQ</div>', unsafe_allow_html=True)
