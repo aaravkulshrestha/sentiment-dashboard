@@ -316,11 +316,6 @@ if st.session_state.nav_open:
 
     st.markdown("<div style='height:1px;background:rgba(255,255,255,0.05);margin:12px 0 20px 0;'></div>", unsafe_allow_html=True)
 
-mport streamlit as st
-import pandas as pd
-from transformers import pipeline
-import plotly.graph_objects as go
-import time
 
 # ─────────────────────────────────────────────
 #  CONFIG
