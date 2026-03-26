@@ -233,93 +233,69 @@ if not st.session_state.started:
 #  SIDEBAR  — uses st.button instead of
 #  st.radio to eliminate keyboard-stuck bug
 # ─────────────────────────────────────────────
+# ── Top navigation bar (always visible, no sidebar needed) ──
 has_data = len(st.session_state.history) > 0
-
-with st.sidebar:
-    st.markdown('<div class="sidebar-logo">SentimentIQ</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-version">v2.0 · RoBERTa</div>', unsafe_allow_html=True)
-    st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-header">Navigation</div>', unsafe_allow_html=True)
-
-    for icon, name, locked in [
-        ("✍️", "Analyze",   False),
-        ("📂", "Dataset",   False),
-        ("📊", "Dashboard", not has_data),
-    ]:
-        if locked:
-            st.markdown(f"<div class='nav-locked'>{icon}  {name} 🔒</div>", unsafe_allow_html=True)
-        else:
-            label = f"{icon}  {name}"
-            if st.button(label, key=f"nav_{name}", use_container_width=True):
-                st.session_state.page = name
-                st.rerun()
-
-    st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
-
-    if has_data:
-        pos = sum(1 for h in st.session_state.history if h["sentiment"] == "POSITIVE")
-        neg = sum(1 for h in st.session_state.history if h["sentiment"] == "NEGATIVE")
-        neu = len(st.session_state.history) - pos - neg
-        st.markdown('<div class="section-header">Session Stats</div>', unsafe_allow_html=True)
-        st.markdown(f"""
-        <div style='padding:10px 0;font-size:13px;line-height:2.2;'>
-            <span style='color:#00ffcc;'>●</span> Positive <b style='color:#00ffcc;float:right;'>{pos}</b><br>
-            <span style='color:#ff4d6d;'>●</span> Negative <b style='color:#ff4d6d;float:right;'>{neg}</b><br>
-            <span style='color:#a78bfa;'>●</span> Neutral  <b style='color:#a78bfa;float:right;'>{neu}</b>
-        </div>""", unsafe_allow_html=True)
-        st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
-
-    if st.button("↺  RESET SESSION", use_container_width=True):
-        st.session_state.history = []
-        st.session_state.page    = "Analyze"
-        st.rerun()
-
 menu = st.session_state.page
 
-# ── Sidebar toggle — works on mobile, Brave, Chrome everywhere ──
-if "sidebar_open" not in st.session_state:
-    st.session_state.sidebar_open = True
-
-# Floating ☰ button styled via CSS, using a real Streamlit button
 st.markdown("""
 <style>
-/* Style the toggle button to look floating and fixed */
-div[data-testid="stHorizontalBlock"]:has(#sidebar-toggle-anchor) {
-    position: fixed !important;
-    top: 12px !important;
-    left: 12px !important;
-    z-index: 99999 !important;
-    width: auto !important;
+.topnav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0 24px 0;
 }
-#sidebar-toggle-anchor + div button {
-    background: rgba(0,255,200,0.1) !important;
-    border: 1px solid rgba(0,255,200,0.4) !important;
-    color: #00ffcc !important;
-    font-size: 18px !important;
-    padding: 6px 14px !important;
-    border-radius: 10px !important;
-    min-height: 0 !important;
-    height: 38px !important;
-    width: 48px !important;
-    letter-spacing: 0 !important;
-    backdrop-filter: blur(10px);
+.topnav-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    background: linear-gradient(90deg,#00ffcc,#7f5af0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-right: 20px;
+}
+.topnav-sep { width: 1px; height: 28px; background: rgba(255,255,255,0.08); margin: 0 4px; }
+.topnav-stat {
+    font-size: 12px;
+    color: #475569;
+    margin-left: auto;
+    letter-spacing: 1px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<span id="sidebar-toggle-anchor"></span>', unsafe_allow_html=True)
-if st.button("☰", key="menu_toggle"):
-    st.session_state.sidebar_open = not st.session_state.sidebar_open
+# Top nav with buttons
+nav_cols = st.columns([2, 1, 1, 1, 3])
+with nav_cols[0]:
+    st.markdown("<div style='font-family:Orbitron,monospace;font-size:17px;font-weight:900;background:linear-gradient(90deg,#00ffcc,#7f5af0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;padding-top:6px;'>⚡ SentimentIQ</div>", unsafe_allow_html=True)
+with nav_cols[1]:
+    if st.button("✍️  Analyze", key="nav_analyze", use_container_width=True):
+        st.session_state.page = "Analyze"
+        st.rerun()
+with nav_cols[2]:
+    if st.button("📂  Dataset", key="nav_dataset", use_container_width=True):
+        st.session_state.page = "Dataset"
+        st.rerun()
+with nav_cols[3]:
+    if has_data:
+        if st.button("📊  Dashboard", key="nav_dashboard", use_container_width=True):
+            st.session_state.page = "Dashboard"
+            st.rerun()
+    else:
+        st.markdown("<div style='padding:8px 12px;font-size:13px;color:#334155;border:1px solid rgba(255,255,255,0.05);border-radius:50px;text-align:center;'>📊 🔒</div>", unsafe_allow_html=True)
+with nav_cols[4]:
+    total = len(st.session_state.history)
+    if total:
+        pos = sum(1 for h in st.session_state.history if h["sentiment"] == "POSITIVE")
+        neg = sum(1 for h in st.session_state.history if h["sentiment"] == "NEGATIVE")
+        neu = total - pos - neg
+        st.markdown(f"<div style='text-align:right;font-size:12px;color:#475569;padding-top:8px;'>🟢 {pos} &nbsp; 🔴 {neg} &nbsp; 🟣 {neu} &nbsp;·&nbsp; {total} total</div>", unsafe_allow_html=True)
+    if st.button("↺ Reset", key="nav_reset"):
+        st.session_state.history = []
+        st.session_state.page = "Analyze"
+        st.rerun()
 
-# Show/hide sidebar based on state
-if st.session_state.sidebar_open:
-    st.markdown("""
-    <style>[data-testid="stSidebar"] { display: flex !important; }</style>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-    <style>[data-testid="stSidebar"] { display: none !important; }</style>
-    """, unsafe_allow_html=True)
+st.markdown("<div style='height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,200,0.3),transparent);margin-bottom:24px;'></div>", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────
