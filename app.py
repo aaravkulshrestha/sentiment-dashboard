@@ -44,6 +44,324 @@ html, body, [class*="css"] {
 #MainMenu, footer, header { visibility: hidden; }
 h1, h2, h3 { font-family: 'Orbitron', monospace !important; }
 
+/* Hide Streamlit's own sidebar toggle */
+[data-testid="collapsedControl"] { display: none !important; }
+button[kind="header"] { display: none !important; }
+.st-emotion-cache-1cypcdb { display: none !important; }
+
+/* Hamburger button — small, square, neon */
+div[data-testid="stHorizontalBlock"] > div:first-child .stButton > button {
+    padding: 6px 12px !important;
+    min-height: 0 !important;
+    height: 36px !important;
+    width: 44px !important;
+    font-size: 18px !important;
+    letter-spacing: 0 !important;
+    border-radius: 10px !important;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+}
+.stat-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #475569; margin-bottom: 10px; }
+.stat-value { font-family: 'Orbitron', monospace; font-size: 44px; font-weight: 900; line-height: 1; }
+.stat-pos { color: #00ffcc; text-shadow: 0 0 24px rgba(0,255,200,0.5); }
+.stat-neg { color: #ff4d6d; text-shadow: 0 0 24px rgba(255,77,109,0.5); }
+.stat-neu { color: #7f5af0; text-shadow: 0 0 24px rgba(127,90,240,0.5); }
+
+.result-badge { display: inline-block; padding: 10px 28px; border-radius: 50px; font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; letter-spacing: 2px; margin: 12px 0; }
+.badge-pos { background: rgba(0,255,200,0.1);  border: 1px solid rgba(0,255,200,0.6);  color: #00ffcc; box-shadow: 0 0 20px rgba(0,255,200,0.2); }
+.badge-neg { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.6); color: #ff4d6d; box-shadow: 0 0 20px rgba(255,77,109,0.2); }
+.badge-neu { background: rgba(127,90,240,0.1); border: 1px solid rgba(127,90,240,0.6); color: #a78bfa; box-shadow: 0 0 20px rgba(127,90,240,0.2); }
+
+.conf-bar-wrap { margin: 16px 0; background: rgba(255,255,255,0.05); border-radius: 50px; height: 10px; overflow: hidden; }
+.conf-bar-fill  { height: 100%; border-radius: 50px; }
+
+.history-chip { display: inline-block; padding: 4px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; margin: 3px; letter-spacing: 1px; }
+.chip-pos { background: rgba(0,255,200,0.12);  color: #00ffcc; border: 1px solid rgba(0,255,200,0.3);  }
+.chip-neg { background: rgba(255,77,109,0.12); color: #ff4d6d; border: 1px solid rgba(255,77,109,0.3); }
+.chip-neu { background: rgba(127,90,240,0.12); color: #a78bfa; border: 1px solid rgba(127,90,240,0.3); }
+
+.neon-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(0,255,200,0.3), transparent); margin: 20px 0; }
+.section-header { font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: #00ffcc; margin-bottom: 4px; }
+
+.sidebar-logo    { font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900; background: linear-gradient(90deg,#00ffcc,#7f5af0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; padding: 8px 0 4px 0; }
+.sidebar-version { font-size: 10px; letter-spacing: 3px; color: #1e293b; text-transform: uppercase; margin-bottom: 20px; }
+
+.stTextArea textarea {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(0,255,200,0.2) !important;
+    border-radius: 12px !important;
+    color: #e2e8f0 !important;
+    font-family: 'Syne', sans-serif !important;
+    font-size: 15px !important;
+}
+.stTextArea textarea:focus { border-color: rgba(0,255,200,0.5) !important; }
+
+.stButton > button {
+    background: linear-gradient(135deg, rgba(0,255,200,0.12), rgba(127,90,240,0.12)) !important;
+    border: 1px solid rgba(0,255,200,0.35) !important;
+    color: #00ffcc !important;
+    font-family: 'Orbitron', monospace !important;
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+    padding: 10px 28px !important;
+    border-radius: 50px !important;
+    transition: all 0.25s !important;
+}
+.stButton > button:hover { box-shadow: 0 0 28px rgba(0,255,200,0.18) !important; transform: translateY(-1px) !important; }
+
+.stDownloadButton > button {
+    background: rgba(127,90,240,0.1) !important;
+    border: 1px solid rgba(127,90,240,0.4) !important;
+    color: #a78bfa !important;
+    font-family: 'Orbitron', monospace !important;
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+    border-radius: 50px !important;
+}
+
+.stSelectbox > div > div { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(0,255,200,0.2) !important; border-radius: 10px !important; color: #e2e8f0 !important; }
+[data-testid="stFileUploader"] { border: 1px dashed rgba(0,255,200,0.2) !important; border-radius: 12px !important; }
+
+.empty-state { text-align: center; padding: 70px 20px; }
+.empty-icon  { font-size: 56px; margin-bottom: 16px; display: block; }
+.empty-text  { font-family: 'Orbitron', monospace; font-size: 14px; letter-spacing: 3px; text-transform: uppercase; color: #334155; }
+.empty-sub   { font-size: 13px; color: #1e293b; margin-top: 8px; }
+
+.welcome-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(38px, 6vw, 76px);
+    font-weight: 900;
+    background: linear-gradient(90deg, #00ffcc 0%, #7f5af0 50%, #00ffcc 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 5s linear infinite;
+    line-height: 1.1;
+    margin-bottom: 16px;
+}
+@keyframes shimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+.welcome-sub  { font-size: 18px; color: #475569; letter-spacing: 1px; margin-bottom: 36px; }
+.feature-pill { display: inline-block; padding: 6px 18px; border-radius: 50px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); font-size: 13px; margin: 4px; color: #64748b; }
+
+.nav-locked { opacity: 0.3; padding: 10px 14px; font-size: 14px; color: #475569; }
+
+.locked-banner { border: 1px solid rgba(127,90,240,0.3); background: rgba(127,90,240,0.06); border-radius: 14px; padding: 40px; text-align: center; margin-top: 40px; }
+.locked-icon   { font-size: 44px; display: block; margin-bottom: 14px; }
+.locked-title  { font-family: 'Orbitron', monospace; font-size: 15px; letter-spacing: 3px; color: #a78bfa; margin-bottom: 10px; }
+.locked-sub    { font-size: 13px; color: #475569; }
+</style>
+""", unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────
+#  HELPERS
+# ─────────────────────────────────────────────
+LABEL_MAP = {"LABEL_0": "NEGATIVE", "LABEL_1": "NEUTRAL", "LABEL_2": "POSITIVE"}
+COLORS    = {"POSITIVE": "#00ffcc", "NEUTRAL": "#7f5af0", "NEGATIVE": "#ff4d6d"}
+BADGE_CSS = {"POSITIVE": "badge-pos", "NEUTRAL": "badge-neu", "NEGATIVE": "badge-neg"}
+CHIP_CSS  = {"POSITIVE": "chip-pos",  "NEUTRAL": "chip-neu",  "NEGATIVE": "chip-neg"}
+STAT_CSS  = {"POSITIVE": "stat-pos",  "NEUTRAL": "stat-neu",  "NEGATIVE": "stat-neg"}
+ICONS     = {"POSITIVE": "🟢", "NEUTRAL": "🟣", "NEGATIVE": "🔴"}
+
+def decode(label):
+    return LABEL_MAP.get(label, label)
+
+def conf_bar(score, sentiment):
+    pct   = int(score * 100)
+    color = COLORS[sentiment]
+    return f"""
+    <div class='conf-bar-wrap'>
+      <div class='conf-bar-fill' style='width:{pct}%;background:linear-gradient(90deg,{color}55,{color});'></div>
+    </div>
+    <div style='font-size:12px;color:#475569;letter-spacing:2px;text-align:right;margin-top:6px;'>
+        CONFIDENCE &nbsp;·&nbsp; <span style='color:{color};font-weight:700;'>{pct}%</span>
+    </div>"""
+
+
+# ─────────────────────────────────────────────
+#  MODEL
+# ─────────────────────────────────────────────
+@st.cache_resource(show_spinner=False)
+def load_model():
+    return pipeline(
+        "sentiment-analysis",
+        model="cardiffnlp/twitter-roberta-base-sentiment",
+    )
+
+
+# ─────────────────────────────────────────────
+#  SESSION STATE
+# ─────────────────────────────────────────────
+for k, v in {"started": False, "history": [], "page": "Analyze"}.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+
+# ─────────────────────────────────────────────
+#  WELCOME SCREEN
+# ─────────────────────────────────────────────
+if not st.session_state.started:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    _, col_c, _ = st.columns([1, 2, 1])
+    with col_c:
+        st.markdown('<div class="welcome-title">Sentiment<br>Intelligence</div>', unsafe_allow_html=True)
+        st.markdown('<div class="welcome-sub">Decode emotion. Visualize truth. In real-time.</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style='margin-bottom:32px;'>
+            <span class='feature-pill'>⚡ RoBERTa NLP</span>
+            <span class='feature-pill'>📊 Live Charts</span>
+            <span class='feature-pill'>📂 Bulk CSV</span>
+            <span class='feature-pill'>💾 Export</span>
+        </div>""", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='display:flex;gap:16px;margin-bottom:36px;'>
+            <div style='flex:1;padding:18px;border-radius:14px;background:rgba(0,255,200,0.05);border:1px solid rgba(0,255,200,0.15);'>
+                <div style='font-size:22px;margin-bottom:8px;'>✍️</div>
+                <div style='font-size:11px;letter-spacing:2px;color:#00ffcc;font-family:Orbitron,monospace;margin-bottom:4px;'>STEP 1</div>
+                <div style='font-size:13px;color:#475569;'>Analyze any text for sentiment</div>
+            </div>
+            <div style='flex:1;padding:18px;border-radius:14px;background:rgba(127,90,240,0.05);border:1px solid rgba(127,90,240,0.15);'>
+                <div style='font-size:22px;margin-bottom:8px;'>📊</div>
+                <div style='font-size:11px;letter-spacing:2px;color:#7f5af0;font-family:Orbitron,monospace;margin-bottom:4px;'>STEP 2</div>
+                <div style='font-size:13px;color:#475569;'>Dashboard unlocks with your data</div>
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+        if st.button("⚡  INITIALIZE SYSTEM", use_container_width=True):
+            st.session_state.started = True
+            st.session_state.page   = "Analyze"
+            st.rerun()
+    st.stop()
+
+
+# ─────────────────────────────────────────────
+#  SIDEBAR  — uses st.button instead of
+#  st.radio to eliminate keyboard-stuck bug
+# ─────────────────────────────────────────────
+# ── Hamburger + slide-down nav drawer ──
+has_data = len(st.session_state.history) > 0
+menu = st.session_state.page
+
+if "nav_open" not in st.session_state:
+    st.session_state.nav_open = False
+
+# Top bar row
+bar_left, bar_mid, bar_right = st.columns([1, 8, 2])
+with bar_left:
+    if st.button("☰", key="hamburger"):
+        st.session_state.nav_open = not st.session_state.nav_open
+        st.rerun()
+with bar_mid:
+    st.markdown("<div style='font-family:Orbitron,monospace;font-size:16px;font-weight:900;background:linear-gradient(90deg,#00ffcc,#7f5af0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;padding-top:8px;'>⚡ SentimentIQ</div>", unsafe_allow_html=True)
+with bar_right:
+    total = len(st.session_state.history)
+    if total:
+        st.markdown(f"<div style='text-align:right;font-size:12px;color:#475569;padding-top:10px;'>{total} analyzed</div>", unsafe_allow_html=True)
+
+st.markdown("<div style='height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,200,0.3),transparent);margin-bottom:8px;'></div>", unsafe_allow_html=True)
+
+# Slide-down nav drawer — only renders when open
+if st.session_state.nav_open:
+    st.markdown("""
+    <div style='background:rgba(5,8,16,0.97);border:1px solid rgba(0,255,200,0.15);
+                border-radius:16px;padding:16px;margin-bottom:20px;'>
+        <div style='font-size:10px;letter-spacing:4px;color:#00ffcc;
+                    font-family:Orbitron,monospace;margin-bottom:12px;'>NAVIGATION</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    n1, n2, n3, n4 = st.columns(4)
+    with n1:
+        if st.button("✍️  Analyze", key="dn_analyze", use_container_width=True):
+            st.session_state.page = "Analyze"
+            st.session_state.nav_open = False
+            st.rerun()
+    with n2:
+        if st.button("📂  Dataset", key="dn_dataset", use_container_width=True):
+            st.session_state.page = "Dataset"
+            st.session_state.nav_open = False
+            st.rerun()
+    with n3:
+        if has_data:
+            if st.button("📊  Dashboard", key="dn_dashboard", use_container_width=True):
+                st.session_state.page = "Dashboard"
+                st.session_state.nav_open = False
+                st.rerun()
+        else:
+            st.markdown("<div style='text-align:center;padding:9px;font-size:13px;color:#334155;border:1px solid rgba(255,255,255,0.05);border-radius:50px;'>📊 🔒</div>", unsafe_allow_html=True)
+    with n4:
+        if st.button("↺  Reset", key="dn_reset", use_container_width=True):
+            st.session_state.history = []
+            st.session_state.page = "Analyze"
+            st.session_state.nav_open = False
+            st.rerun()
+
+    # Session stats row
+    if st.session_state.history:
+        pos = sum(1 for h in st.session_state.history if h["sentiment"] == "POSITIVE")
+        neg = sum(1 for h in st.session_state.history if h["sentiment"] == "NEGATIVE")
+        neu = len(st.session_state.history) - pos - neg
+        st.markdown(f"""
+        <div style='display:flex;gap:20px;padding:10px 4px 4px 4px;font-size:13px;'>
+            <span style='color:#00ffcc;'>🟢 Positive &nbsp;<b>{pos}</b></span>
+            <span style='color:#ff4d6d;'>🔴 Negative &nbsp;<b>{neg}</b></span>
+            <span style='color:#a78bfa;'>🟣 Neutral &nbsp;<b>{neu}</b></span>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<div style='height:1px;background:rgba(255,255,255,0.05);margin:12px 0 20px 0;'></div>", unsafe_allow_html=True)
+
+mport streamlit as st
+import pandas as pd
+from transformers import pipeline
+import plotly.graph_objects as go
+import time
+
+# ─────────────────────────────────────────────
+#  CONFIG
+# ─────────────────────────────────────────────
+st.set_page_config(
+    page_title="SentimentIQ",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ─────────────────────────────────────────────
+#  GLOBAL CSS
+# ─────────────────────────────────────────────
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@400;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Syne', sans-serif;
+    color: #e2e8f0;
+}
+
+.stApp {
+    background: #050810;
+    background-image:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(0,255,200,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 90%, rgba(127,90,240,0.08) 0%, transparent 55%),
+        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(0,255,200,0.025) 60px),
+        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(0,255,200,0.025) 60px);
+}
+
+[data-testid="stSidebar"] {
+    background: rgba(5,8,16,0.97) !important;
+    border-right: 1px solid rgba(0,255,200,0.12) !important;
+}
+[data-testid="stSidebar"] * { font-family: 'Syne', sans-serif !important; }
+
+#MainMenu, footer, header { visibility: hidden; }
+h1, h2, h3 { font-family: 'Orbitron', monospace !important; }
+
 /* Hide the sidebar collapse/expand toggle arrow button */
 [data-testid="collapsedControl"] { display: none !important; }
 button[kind="header"] { display: none !important; }
