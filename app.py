@@ -276,40 +276,50 @@ with st.sidebar:
 
 menu = st.session_state.page
 
-# ── Mobile-friendly sidebar toggle button ──
+# ── Sidebar toggle — works on mobile, Brave, Chrome everywhere ──
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = True
+
+# Floating ☰ button styled via CSS, using a real Streamlit button
 st.markdown("""
 <style>
-.mobile-menu-btn {
-    position: fixed;
-    top: 14px;
-    left: 14px;
-    z-index: 9999;
-    background: rgba(0,255,200,0.1);
-    border: 1px solid rgba(0,255,200,0.35);
-    border-radius: 10px;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-size: 18px;
-    color: #00ffcc;
-    backdrop-filter: blur(10px);
-    transition: all 0.2s;
-    line-height: 1;
+/* Style the toggle button to look floating and fixed */
+div[data-testid="stHorizontalBlock"]:has(#sidebar-toggle-anchor) {
+    position: fixed !important;
+    top: 12px !important;
+    left: 12px !important;
+    z-index: 99999 !important;
+    width: auto !important;
 }
-.mobile-menu-btn:hover {
-    background: rgba(0,255,200,0.2);
-    box-shadow: 0 0 16px rgba(0,255,200,0.2);
+#sidebar-toggle-anchor + div button {
+    background: rgba(0,255,200,0.1) !important;
+    border: 1px solid rgba(0,255,200,0.4) !important;
+    color: #00ffcc !important;
+    font-size: 18px !important;
+    padding: 6px 14px !important;
+    border-radius: 10px !important;
+    min-height: 0 !important;
+    height: 38px !important;
+    width: 48px !important;
+    letter-spacing: 0 !important;
+    backdrop-filter: blur(10px);
 }
 </style>
-<button class='mobile-menu-btn' onclick="
-    var sidebar = window.parent.document.querySelector('[data-testid=stSidebar]');
-    var collapsed = window.parent.document.querySelector('[data-testid=collapsedControl]');
-    if (collapsed) collapsed.click();
-    else {
-        var btn = window.parent.document.querySelector('[data-testid=stSidebarCollapseButton]');
-        if(btn) btn.click();
-    }
-">☰</button>
 """, unsafe_allow_html=True)
+
+st.markdown('<span id="sidebar-toggle-anchor"></span>', unsafe_allow_html=True)
+if st.button("☰", key="menu_toggle"):
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
+
+# Show/hide sidebar based on state
+if st.session_state.sidebar_open:
+    st.markdown("""
+    <style>[data-testid="stSidebar"] { display: flex !important; }</style>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <style>[data-testid="stSidebar"] { display: none !important; }</style>
+    """, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────
