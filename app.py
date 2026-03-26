@@ -11,7 +11,7 @@ st.set_page_config(
     page_title="SentimentIQ",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ─────────────────────────────────────────────
@@ -220,6 +220,7 @@ if not st.session_state.started:
         if st.button("⚡  INITIALIZE SYSTEM", use_container_width=True):
             st.session_state.started = True
             st.session_state.page   = "Analyze"
+            st.session_state.open_sidebar = True
             st.rerun()
     st.stop()
 
@@ -229,6 +230,18 @@ if not st.session_state.started:
 #  st.radio to eliminate keyboard-stuck bug
 # ─────────────────────────────────────────────
 has_data = len(st.session_state.history) > 0
+
+# Auto-open sidebar once after welcome screen
+if st.session_state.get("open_sidebar"):
+    st.session_state.open_sidebar = False
+    st.components.v1.html("""
+    <script>
+        setTimeout(function() {
+            var btn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+            if (btn) btn.click();
+        }, 300);
+    </script>
+    """, height=0)
 
 with st.sidebar:
     st.markdown('<div class="sidebar-logo">SentimentIQ</div>', unsafe_allow_html=True)
