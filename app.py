@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from transformers import pipeline
 import plotly.graph_objects as go
-import time
 import sqlite3
 import os
 
@@ -42,6 +41,13 @@ def load_history():
     con.close()
     return [{"text": r[0], "sentiment": r[1], "confidence": r[2]} for r in rows]
 
+def get_db_stats():
+    con = sqlite3.connect(DB_PATH)
+    count = con.execute("SELECT COUNT(*) FROM history").fetchone()[0]
+    con.close()
+    size = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
+    return count, size
+
 # Initialise DB on startup
 init_db()
 
@@ -50,11 +56,11 @@ init_db()
 # ─────────────────────────────────────────────
 def preprocess(text):
     """Clean and normalise text before passing to the model."""
-    text = text.strip()                                              # remove leading/trailing whitespace
-    text = " ".join(text.split())                                    # collapse internal whitespace / newlines
-    text = text.encode("utf-8", errors="ignore").decode("utf-8")    # fix encoding artefacts
-    text = text.replace("\x00", "")                                  # strip null bytes
-    return text[:512]                                                # enforce model max length
+    text = text.strip()
+    text = " ".join(text.split())
+    text = text.encode("utf-8", errors="ignore").decode("utf-8")
+    text = text.replace("\x00", "")
+    return text[:512]
 
 # ─────────────────────────────────────────────
 #  CONFIG
@@ -96,7 +102,6 @@ html, body, [class*="css"] {
 #MainMenu, footer, header { visibility: hidden; }
 h1, h2, h3 { font-family: 'Orbitron', monospace !important; }
 
-/* Hide the sidebar collapse/expand toggle arrow button */
 [data-testid="collapsedControl"] { display: none !important; }
 button[kind="header"] { display: none !important; }
 .st-emotion-cache-1cypcdb { display: none !important; }
@@ -207,6 +212,14 @@ button[kind="header"] { display: none !important; }
     margin-bottom: 12px;
     font-family: monospace;
 }
+
+.db-status-box {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(0,255,200,0.04);
+    border: 1px solid rgba(0,255,200,0.12);
+    margin-bottom: 12px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -249,14 +262,13 @@ def load_model():
 
 # ─────────────────────────────────────────────
 #  SESSION STATE
-#  history is seeded from the database on first load
 # ─────────────────────────────────────────────
 for k, v in {"started": False, "page": "Analyze"}.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
 if "history" not in st.session_state:
-    st.session_state.history = load_history()   # ← loads persisted results from SQLite
+    st.session_state.history = load_history()
 
 
 # ─────────────────────────────────────────────
@@ -309,19 +321,31 @@ with st.sidebar:
     st.markdown('<div class="section-header">Navigation</div>', unsafe_allow_html=True)
 
     for icon, name, locked in [
-        ("✍️", "Analyze",   False),
-        ("📂", "Dataset",   False),
-        ("📊", "Dashboard", not has_data),
+        ("✍️",  "Analyze",   False),
+        ("📂",  "Dataset",   False),
+        ("📊",  "Dashboard", not has_data),
+        ("🗄️", "Database",  False),
     ]:
         if locked:
             st.markdown(f"<div class='nav-locked'>{icon}  {name} 🔒</div>", unsafe_allow_html=True)
         else:
-            label = f"{icon}  {name}"
-            if st.button(label, key=f"nav_{name}", use_container_width=True):
+            if st.button(f"{icon}  {name}", key=f"nav_{name}", use_container_width=True):
                 st.session_state.page = name
                 st.rerun()
 
     st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
+
+    # ── Live DB status panel ─────────────────────────────────
+    record_count, db_size = get_db_stats()
+    st.markdown(f"""
+    <div class='db-status-box'>
+        <div style='font-size:10px;letter-spacing:3px;color:#00ffcc;margin-bottom:8px;'>🗄️ DATABASE</div>
+        <div style='font-size:12px;color:#475569;line-height:2.2;'>
+            Status &nbsp;<b style='color:#00ffcc;float:right;'>● CONNECTED</b><br>
+            Records &nbsp;<b style='color:#e2e8f0;float:right;'>{record_count}</b><br>
+            Size &nbsp;<b style='color:#e2e8f0;float:right;'>{round(db_size / 1024, 1)} KB</b>
+        </div>
+    </div>""", unsafe_allow_html=True)
 
     if has_data:
         pos = sum(1 for h in st.session_state.history if h["sentiment"] == "POSITIVE")
@@ -372,28 +396,25 @@ if menu == "Analyze":
 
     with col_out:
         if run and text.strip():
-            # ── Preprocessing step ──────────────────────────────
             clean_text = preprocess(text)
 
             with st.spinner("Analyzing…"):
-                model     = load_model()
-                res       = model(clean_text)[0]
+                model = load_model()
+                res   = model(clean_text)[0]
 
             sentiment = decode(res["label"])
             score     = res["score"]
 
-            # Show preprocessing info to the user
             st.markdown(f"""
             <div class='preprocess-box'>
                 <b style='color:#00ffcc;letter-spacing:2px;font-size:10px;'>PREPROCESSING</b><br>
-                Original length: {len(text)} chars &nbsp;·&nbsp;
-                Cleaned length: {len(clean_text)} chars &nbsp;·&nbsp;
+                Original: {len(text)} chars &nbsp;·&nbsp;
+                Cleaned: {len(clean_text)} chars &nbsp;·&nbsp;
                 Whitespace normalised ✓ &nbsp;·&nbsp; Encoding fixed ✓
             </div>""", unsafe_allow_html=True)
 
             snippet = text[:80] + ("…" if len(text) > 80 else "")
 
-            # ── Save to session state AND database ───────────────
             st.session_state.history.append({
                 "text":       snippet,
                 "sentiment":  sentiment,
@@ -472,7 +493,6 @@ elif menu == "Dataset":
             results, scores = [], []
             bar = st.progress(0, text="Analyzing…")
             for i, t in enumerate(rows):
-                # ── Preprocessing applied to every row ──────────
                 clean_t = preprocess(str(t))
                 r = model(clean_t)[0]
                 results.append(decode(r["label"]))
@@ -484,7 +504,6 @@ elif menu == "Dataset":
             out_df["sentiment"]  = results
             out_df["confidence"] = scores
 
-            # ── Save every bulk result to session + database ─────
             for sent, conf, txt in zip(results, scores, rows):
                 snippet = str(txt)[:80]
                 st.session_state.history.append({
@@ -539,7 +558,6 @@ elif menu == "Dashboard":
     st.markdown("### 📊 Dashboard")
     st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
 
-    # ── Load fresh from DB so data survives page refreshes ──────
     history    = load_history()
     sentiments = [h["sentiment"] for h in history]
     total      = len(sentiments)
@@ -614,7 +632,6 @@ elif menu == "Dashboard":
         )
         st.plotly_chart(fig_tl, use_container_width=True)
 
-    # Confidence trend
     conf_items = [h for h in history if "confidence" in h]
     if conf_items:
         st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
@@ -647,3 +664,113 @@ elif menu == "Dashboard":
     csv_export = pd.DataFrame(history).to_csv(index=False).encode("utf-8")
     st.download_button("💾  EXPORT SESSION HISTORY", csv_export,
                        "sentimentiq_session.csv", "text/csv")
+
+
+# ─────────────────────────────────────────────
+#  PAGE: DATABASE
+# ─────────────────────────────────────────────
+elif menu == "Database":
+    st.markdown('<div class="section-header">Database Viewer</div>', unsafe_allow_html=True)
+    st.markdown("### 🗄️ SQLite Database")
+    st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
+
+    con   = sqlite3.connect(DB_PATH)
+    df_db = pd.read_sql_query(
+        "SELECT id, text, sentiment, confidence, created_at FROM history ORDER BY id DESC",
+        con
+    )
+    con.close()
+
+    db_size   = round(os.path.getsize(DB_PATH) / 1024, 1) if os.path.exists(DB_PATH) else 0
+    total_rec = len(df_db)
+    pos_count = len(df_db[df_db["sentiment"] == "POSITIVE"]) if total_rec > 0 else 0
+    neg_count = len(df_db[df_db["sentiment"] == "NEGATIVE"]) if total_rec > 0 else 0
+    neu_count = len(df_db[df_db["sentiment"] == "NEUTRAL"])  if total_rec > 0 else 0
+    avg_conf  = round(df_db["confidence"].mean(), 1)         if total_rec > 0 else 0
+
+    # ── Top stats row ────────────────────────────────────────
+    ca, cb, cc, cd, ce = st.columns(5, gap="medium")
+    for col, label, val, css, small in [
+        (ca, "Status",   "● LIVE",        "stat-pos", True),
+        (cb, "Records",  total_rec,        "stat-pos", False),
+        (cc, "DB Size",  f"{db_size} KB",  "stat-neu", True),
+        (cd, "Avg Conf", f"{avg_conf}%",   "stat-neu", True),
+        (ce, "File",     "sentimentiq.db", "stat-neu", True),
+    ]:
+        font_size = "22px" if small else "44px"
+        with col:
+            st.markdown(f"""
+            <div class='stat-card'>
+                <div class='stat-label'>{label}</div>
+                <div class='stat-value {css}' style='font-size:{font_size};'>{val}</div>
+            </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Sentiment breakdown ──────────────────────────────────
+    st.markdown('<div class="section-header">Breakdown</div>', unsafe_allow_html=True)
+    bc1, bc2, bc3 = st.columns(3, gap="medium")
+    for col, label, val, css in [
+        (bc1, "Positive", pos_count, "stat-pos"),
+        (bc2, "Negative", neg_count, "stat-neg"),
+        (bc3, "Neutral",  neu_count, "stat-neu"),
+    ]:
+        with col:
+            pct = round((val / total_rec * 100), 1) if total_rec > 0 else 0
+            st.markdown(f"""
+            <div class='stat-card'>
+                <div class='stat-label'>{label}</div>
+                <div class='stat-value {css}' style='font-size:32px;'>{val}</div>
+                <div style='font-size:12px;color:#334155;margin-top:6px;'>{pct}% of total</div>
+            </div>""", unsafe_allow_html=True)
+
+    st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
+
+    # ── Filter controls ──────────────────────────────────────
+    st.markdown('<div class="section-header">Filter Records</div>', unsafe_allow_html=True)
+    f1, f2 = st.columns([2, 1], gap="large")
+    with f1:
+        filter_sent = st.selectbox(
+            "Filter by sentiment",
+            ["ALL", "POSITIVE", "NEGATIVE", "NEUTRAL"]
+        )
+    with f2:
+        max_rows = max(10, total_rec)
+        show_limit = st.slider("Rows to display", 10, max_rows, min(100, max_rows))
+
+    filtered_df = df_db if filter_sent == "ALL" else df_db[df_db["sentiment"] == filter_sent]
+    filtered_df = filtered_df.head(show_limit)
+
+    st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">All Records</div>', unsafe_allow_html=True)
+
+    if total_rec == 0:
+        st.markdown("""
+        <div class='empty-state'>
+            <span class='empty-icon'>🗄️</span>
+            <div class='empty-text'>Database Empty</div>
+            <div class='empty-sub'>Run some analyses to populate the database</div>
+        </div>""", unsafe_allow_html=True)
+    else:
+        st.dataframe(filtered_df, use_container_width=True, height=420)
+
+        st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
+        dl1, dl2 = st.columns(2, gap="medium")
+        with dl1:
+            csv_full = df_db.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "💾  DOWNLOAD FULL DATABASE",
+                csv_full,
+                "sentimentiq_full_database.csv",
+                "text/csv",
+                use_container_width=True,
+            )
+        with dl2:
+            csv_filtered = filtered_df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "📥  DOWNLOAD FILTERED VIEW",
+                csv_filtered,
+                f"sentimentiq_{filter_sent.lower()}.csv",
+                "text/csv",
+                use_container_width=True,
+            )
