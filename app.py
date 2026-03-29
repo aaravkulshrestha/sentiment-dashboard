@@ -3,6 +3,58 @@ import pandas as pd
 from transformers import pipeline
 import plotly.graph_objects as go
 import time
+import sqlite3
+import os
+
+# ─────────────────────────────────────────────
+#  DATABASE HELPERS
+# ─────────────────────────────────────────────
+DB_PATH = "sentimentiq.db"
+
+def init_db():
+    con = sqlite3.connect(DB_PATH)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS history (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            text       TEXT,
+            sentiment  TEXT,
+            confidence REAL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    con.commit()
+    con.close()
+
+def save_result(text, sentiment, confidence):
+    con = sqlite3.connect(DB_PATH)
+    con.execute(
+        "INSERT INTO history (text, sentiment, confidence) VALUES (?, ?, ?)",
+        (text, sentiment, confidence)
+    )
+    con.commit()
+    con.close()
+
+def load_history():
+    con = sqlite3.connect(DB_PATH)
+    rows = con.execute(
+        "SELECT text, sentiment, confidence FROM history ORDER BY id ASC"
+    ).fetchall()
+    con.close()
+    return [{"text": r[0], "sentiment": r[1], "confidence": r[2]} for r in rows]
+
+# Initialise DB on startup
+init_db()
+
+# ─────────────────────────────────────────────
+#  NLP PREPROCESSING
+# ─────────────────────────────────────────────
+def preprocess(text):
+    """Clean and normalise text before passing to the model."""
+    text = text.strip()                                              # remove leading/trailing whitespace
+    text = " ".join(text.split())                                    # collapse internal whitespace / newlines
+    text = text.encode("utf-8", errors="ignore").decode("utf-8")    # fix encoding artefacts
+    text = text.replace("\x00", "")                                  # strip null bytes
+    return text[:512]                                                # enforce model max length
 
 # ─────────────────────────────────────────────
 #  CONFIG
@@ -144,6 +196,17 @@ button[kind="header"] { display: none !important; }
 .locked-icon   { font-size: 44px; display: block; margin-bottom: 14px; }
 .locked-title  { font-family: 'Orbitron', monospace; font-size: 15px; letter-spacing: 3px; color: #a78bfa; margin-bottom: 10px; }
 .locked-sub    { font-size: 13px; color: #475569; }
+
+.preprocess-box {
+    background: rgba(0,255,200,0.03);
+    border: 1px solid rgba(0,255,200,0.1);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 12px;
+    font-family: monospace;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -186,10 +249,14 @@ def load_model():
 
 # ─────────────────────────────────────────────
 #  SESSION STATE
+#  history is seeded from the database on first load
 # ─────────────────────────────────────────────
-for k, v in {"started": False, "history": [], "page": "Analyze"}.items():
+for k, v in {"started": False, "page": "Analyze"}.items():
     if k not in st.session_state:
         st.session_state[k] = v
+
+if "history" not in st.session_state:
+    st.session_state.history = load_history()   # ← loads persisted results from SQLite
 
 
 # ─────────────────────────────────────────────
@@ -207,6 +274,7 @@ if not st.session_state.started:
             <span class='feature-pill'>📊 Live Charts</span>
             <span class='feature-pill'>📂 Bulk CSV</span>
             <span class='feature-pill'>💾 Export</span>
+            <span class='feature-pill'>🗄️ SQLite DB</span>
         </div>""", unsafe_allow_html=True)
         st.markdown("""
         <div style='display:flex;gap:16px;margin-bottom:36px;'>
@@ -230,14 +298,13 @@ if not st.session_state.started:
 
 
 # ─────────────────────────────────────────────
-#  SIDEBAR  — uses st.button instead of
-#  st.radio to eliminate keyboard-stuck bug
+#  SIDEBAR
 # ─────────────────────────────────────────────
 has_data = len(st.session_state.history) > 0
 
 with st.sidebar:
     st.markdown('<div class="sidebar-logo">SentimentIQ</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-version">v2.0 · RoBERTa</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-version">v2.0 · RoBERTa · SQLite</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
     st.markdown('<div class="section-header">Navigation</div>', unsafe_allow_html=True)
 
@@ -305,17 +372,34 @@ if menu == "Analyze":
 
     with col_out:
         if run and text.strip():
+            # ── Preprocessing step ──────────────────────────────
+            clean_text = preprocess(text)
+
             with st.spinner("Analyzing…"):
                 model     = load_model()
-                res       = model(text[:512])[0]
+                res       = model(clean_text)[0]
+
             sentiment = decode(res["label"])
             score     = res["score"]
 
+            # Show preprocessing info to the user
+            st.markdown(f"""
+            <div class='preprocess-box'>
+                <b style='color:#00ffcc;letter-spacing:2px;font-size:10px;'>PREPROCESSING</b><br>
+                Original length: {len(text)} chars &nbsp;·&nbsp;
+                Cleaned length: {len(clean_text)} chars &nbsp;·&nbsp;
+                Whitespace normalised ✓ &nbsp;·&nbsp; Encoding fixed ✓
+            </div>""", unsafe_allow_html=True)
+
+            snippet = text[:80] + ("…" if len(text) > 80 else "")
+
+            # ── Save to session state AND database ───────────────
             st.session_state.history.append({
-                "text":       text[:80] + ("…" if len(text) > 80 else ""),
+                "text":       snippet,
                 "sentiment":  sentiment,
                 "confidence": round(score * 100, 1),
             })
+            save_result(snippet, sentiment, round(score * 100, 1))
 
             st.markdown(f"""
             <div style='padding:28px;background:rgba(255,255,255,0.03);border-radius:16px;
@@ -388,7 +472,9 @@ elif menu == "Dataset":
             results, scores = [], []
             bar = st.progress(0, text="Analyzing…")
             for i, t in enumerate(rows):
-                r = model(str(t)[:512])[0]
+                # ── Preprocessing applied to every row ──────────
+                clean_t = preprocess(str(t))
+                r = model(clean_t)[0]
                 results.append(decode(r["label"]))
                 scores.append(round(r["score"] * 100, 1))
                 bar.progress((i + 1) / len(rows), text=f"Row {i+1} / {len(rows)}")
@@ -398,10 +484,13 @@ elif menu == "Dataset":
             out_df["sentiment"]  = results
             out_df["confidence"] = scores
 
+            # ── Save every bulk result to session + database ─────
             for sent, conf, txt in zip(results, scores, rows):
+                snippet = str(txt)[:80]
                 st.session_state.history.append({
-                    "text": str(txt)[:80], "sentiment": sent, "confidence": conf,
+                    "text": snippet, "sentiment": sent, "confidence": conf,
                 })
+                save_result(snippet, sent, conf)
 
             st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
             st.markdown('<div class="section-header">Results Preview</div>', unsafe_allow_html=True)
@@ -450,7 +539,8 @@ elif menu == "Dashboard":
     st.markdown("### 📊 Dashboard")
     st.markdown('<div class="neon-divider"></div>', unsafe_allow_html=True)
 
-    history    = st.session_state.history
+    # ── Load fresh from DB so data survives page refreshes ──────
+    history    = load_history()
     sentiments = [h["sentiment"] for h in history]
     total      = len(sentiments)
     counts_map = {s: sentiments.count(s) for s in ["POSITIVE", "NEUTRAL", "NEGATIVE"]}
