@@ -735,8 +735,8 @@ elif menu == "Database":
             ["ALL", "POSITIVE", "NEGATIVE", "NEUTRAL"]
         )
     with f2:
-        max_rows = max(10, total_rec)
-        show_limit = st.slider("Rows to display", 10, max_rows, min(100, max_rows))
+        max_rows = max(11, total_rec)
+    show_limit = st.slider("Rows to display", 10, max_rows, min(100, max_rows))
 
     filtered_df = df_db if filter_sent == "ALL" else df_db[df_db["sentiment"] == filter_sent]
     filtered_df = filtered_df.head(show_limit)
